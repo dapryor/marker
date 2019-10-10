@@ -1,6 +1,7 @@
 package marker
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"sort"
@@ -8,6 +9,32 @@ import (
 )
 
 type MatcherFunc func(string) Match
+
+type state int
+
+const (
+	ready state = iota
+	s
+	m
+	t
+	w
+	f
+	sa
+	sumo
+	th
+	tu
+	we
+	fr
+	sat
+	ready_for_day
+	thu
+	thurtue
+	wed
+	satu
+	d
+	da
+	day
+)
 
 // Match contains information about found patterns by MatcherFunc
 type Match struct {
@@ -70,6 +97,7 @@ func MatchParensSurrounded() MatcherFunc {
 
 var daysOfWeek = [14]string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
 	"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+
 // MatchDaysOfWeek returns a MatcherFunc that matches days of the week in given string
 func MatchDaysOfWeek() MatcherFunc {
 	return func(str string) Match {
@@ -93,6 +121,184 @@ func MatchDaysOfWeek() MatcherFunc {
 		return Match{
 			Template: str,
 			Patterns: pattern,
+		}
+	}
+}
+
+func MatchDaysOfWeek2() MatcherFunc {
+	return func(str string) Match {
+		state := ready
+		strbuf := bytes.NewBufferString(str).Bytes()
+		var startInd int
+		var matchStr []string
+		out := str
+		var offset int
+		for ind, char := range strbuf {
+			switch state {
+			case ready:
+				startInd = ind
+				switch char {
+				case 'm', 'M':
+					state = m
+				case 't', 'T':
+					state = t
+				case 'w', 'W':
+					state = w
+				case 'f', 'F':
+					state = f
+				case 's', 'S':
+					state = s
+				default:
+					state = ready
+				}
+			case s:
+				switch char {
+				case 'u':
+					state = sumo
+				case 'a':
+					state = sa
+				default:
+					state = ready
+				}
+			case m:
+				switch char {
+				case 'o':
+					state = sumo
+				default:
+					state = ready
+
+				}
+			case t:
+				switch char {
+				case 'u':
+					state = tu
+				case 'h':
+					state = th
+				default:
+					state = ready
+				}
+			case w:
+				switch char {
+				case 'e':
+					state = we
+				default:
+					state = ready
+				}
+			case f:
+				switch char {
+				case 'r':
+					state = fr
+				default:
+					state = ready
+				}
+			case sa:
+				switch char {
+				case 't':
+					state = sat
+				default:
+					state = ready
+				}
+			case sumo:
+				switch char {
+				case 'n':
+					state = ready_for_day
+				default:
+					state = ready
+				}
+			case th:
+				switch char {
+				case 'u':
+					state = thu
+				default:
+					state = ready
+				}
+			case tu:
+				switch char {
+				case 'e':
+					state = thurtue
+				default:
+					state = ready
+				}
+			case we:
+				switch char {
+				case 'd':
+					state = wed
+				default:
+					state = ready
+				}
+			case fr:
+				switch char {
+				case 'i':
+					state = ready_for_day
+				default:
+					state = ready
+				}
+			case sat:
+				switch char {
+				case 'u':
+					state = satu
+				default:
+					state = ready
+				}
+			case ready_for_day:
+				switch char {
+				case 'd':
+					state = d
+				default:
+					state = ready
+				}
+			case thu:
+				switch char {
+				case 'r':
+					state = thurtue
+				default:
+					state = ready
+				}
+			case thurtue:
+				switch char {
+				case 's':
+					state = ready_for_day
+				default:
+					state = ready
+				}
+			case wed:
+				switch char {
+				case 'n':
+					state = tu
+				default:
+					state = ready
+				}
+			case satu:
+				switch char {
+				case 'r':
+					state = ready_for_day
+				default:
+					state = ready
+				}
+			case d:
+				switch char {
+				case 'a':
+					state = da
+				default:
+					state = ready
+				}
+			case da:
+				switch char {
+				case 'y':
+					state = day
+				default:
+					state = ready
+				}
+			case day:
+				matchStr = append(matchStr, str[startInd:ind])
+				out = out[:startInd-offset] + "%s" + out[ind-offset:]
+				offset += ind - startInd - 2
+				state = ready
+			}
+		}
+		return Match{
+			Template: out,
+			Patterns: matchStr,
 		}
 	}
 }

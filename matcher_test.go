@@ -101,12 +101,31 @@ func Test_MatchParensSurrounded(t *testing.T) {
 }
 
 func Test_MatchDaysOfWeek(t *testing.T) {
-	str := "Today is Tuesday or tuesday not tUesday"
-	actualMatch := MatchDaysOfWeek()(str)
-	expectedMatch := Match{Template: "Today is %s or %s not tUesday", Patterns: []string{"Tuesday", "tuesday"}}
+	str := "monday tuesday wednesday thursday friday saturday sunday Monday Tuesday Wednesday Thursday Friday Saturday Sunday funday"
+	weekdays := []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+		"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+	actualMatch := MatchDaysOfWeek2()(str)
+	expectedMatch := Match{Template: "%s %s %s %s %s %s %s %s %s %s %s %s %s %s funday", Patterns: weekdays}
 	assert.Equal(t, actualMatch, expectedMatch)
-	str = "Today is Tuesday or tuesday not tUesday but Tuesday"
-	actualMatch = MatchDaysOfWeek()(str)
-	expectedMatch = Match{Template: "Today is %s or %s not tUesday but %s", Patterns: []string{"Tuesday", "tuesday", "Tuesday"}}
-	assert.Equal(t, actualMatch, expectedMatch)
+	// str = "Today is Tuesday or tuesday not tUesday but Tuesday"
+	// actualMatch = MatchDaysOfWeek()(str)
+	// expectedMatch = Match{Template: "Today is %s or %s not tUesday but %s", Patterns: []string{"Tuesday", "tuesday", "Tuesday"}}
+	// assert.Equal(t, actualMatch, expectedMatch)
+}
+
+func Benchmark_MatchDaysOfWeek_fsm(b *testing.B) {
+	b.ReportAllocs()
+	str := "monday tuesday wednesday thursday friday saturday sunday Monday Tuesday Wednesday Thursday Friday Saturday Sunday funday"
+
+	for i := 0; i < b.N; i++ {
+		MatchDaysOfWeek2()(str)
+	}
+}
+func Benchmark_MatchDaysOfWeek_3(b *testing.B) {
+	b.ReportAllocs()
+	str := "monday tuesday wednesday thursday friday saturday sunday Monday Tuesday Wednesday Thursday Friday Saturday Sunday funday"
+
+	for i := 0; i < b.N; i++ {
+		MatchDaysOfWeek()(str)
+	}
 }
